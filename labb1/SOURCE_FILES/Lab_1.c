@@ -23,8 +23,6 @@ void *loop(int *thread_x){
 	return NULL;
 }
 
-
-
 int main(int ac, char * argv)
 {
 	pthread_t my_thread;
