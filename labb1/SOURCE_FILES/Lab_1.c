@@ -15,34 +15,48 @@
 #include <unistd.h>
 
 
-void *loop(int *thread_x){
-	
+pthread_mutex_t lock;
+
+void *hello_moon(int *thread_x){
+	pthread_mutex_lock(&lock);
+
 	for(int i = 0; i < 10; i++){
 		printf("Hello Moon!\n");
 		usleep(1000000);
 	}
-	
+	pthread_mutex_unlock(&lock);
 	return NULL;
 }
 
-pthread_mutex_t lock;
+void *hello_world(int *thread_x){
+	pthread_mutex_lock(&lock);
+	for(int i = 0; i < 10; i++){
+		printf("Hello World!\n");
+		usleep(1000000);
+	}
+	pthread_mutex_unlock(&lock);
+	return NULL;
+}
+
 
 int main(int ac, char * argv)
 {
-	pthread_t my_thread;
+	pthread_t world_thread;
+	pthread_t moon_thread;
 	
 	int x = 0;
 	while(1){
-		for(int i = 0; i < 10; i++){
-			printf("Hello world!\n");
-			usleep(1000000);
-		}
-		if(pthread_create(&my_thread, NULL, &loop, &x)) {
+		if(pthread_create(&world_thread, NULL, &hello_world, &x)) {
 			printf("Error creating thread\n");
 			return 1;
 		}
-		//pthread_join(my_thread, NULL);//
-		
+		if(pthread_create(&moon_thread, NULL, &hello_moon, &x)) {
+			printf("Error creating thread\n");
+			return 1;
+		}
+		pthread_join(world_thread, NULL);
+		pthread_join(moon_thread, NULL);
+		//pthread_mutex_destroy(&lock);
 	}
 	return 0;
 
