@@ -16,16 +16,21 @@
 
 
 void *loop(int *thread_x){
+	
 	for(int i = 0; i < 10; i++){
 		printf("Hello Moon!\n");
 		usleep(1000000);
 	}
+	
 	return NULL;
 }
+
+pthread_mutex_t lock;
 
 int main(int ac, char * argv)
 {
 	pthread_t my_thread;
+	
 	int x = 0;
 	while(1){
 		for(int i = 0; i < 10; i++){
@@ -36,6 +41,8 @@ int main(int ac, char * argv)
 			printf("Error creating thread\n");
 			return 1;
 		}
+		//pthread_join(my_thread, NULL);//
+		
 	}
 	return 0;
 
