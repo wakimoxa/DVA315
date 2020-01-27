@@ -23,8 +23,6 @@ void *loop(int *thread_x){
 	return NULL;
 }
 
-
-
 int main(int ac, char * argv)
 {
 	pthread_t my_thread;
@@ -32,7 +30,6 @@ int main(int ac, char * argv)
 
 	for(int i = 0; i < 10; i++){
 		if(pthread_create(&my_thread, NULL, loop, &x)) {
-
 			fprintf(stderr, "Error creating thread\n");
 			return 1;
 		}
