@@ -16,9 +16,9 @@
 
 
 void *loop(int *thread_x){
-	while(1){
-		printf("Hello Moon! %i\n", *thread_x);
-		usleep(200000);
+	for(int i = 0; i < 10; i++){
+		printf("Hello Moon!\n");
+		usleep(1000000);
 	}
 	return NULL;
 }
@@ -27,14 +27,16 @@ int main(int ac, char * argv)
 {
 	pthread_t my_thread;
 	int x = 0;
-
-	for(int i = 0; i < 10; i++){
-		if(pthread_create(&my_thread, NULL, loop, &x)) {
-
-			fprintf(stderr, "Error creating thread\n");
+	while(1){
+		for(int i = 0; i < 10; i++){
+			printf("Hello world!\n");
+			usleep(1000000);
+		}
+		if(pthread_create(&my_thread, NULL, &loop, &x)) {
+			printf("Error creating thread\n");
 			return 1;
 		}
-		printf("Hello world!\n");
-		usleep(1000000);
 	}
+	return 0;
+
 }
