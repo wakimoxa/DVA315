@@ -9,6 +9,33 @@
 //Big note! If you think the arguments makes no sense, you are allowed to change them, as long as the basic functionality is kept
 //In case you run in to blocking issues with reading from the queue, the option O_NONBLOCK is a hot tip
 
+static void received_msg(union sigval sv){
+    struct mq_attr attr;
+    ssize_t nr;
+    void* buff;
+    mqd_t mqdes = *((mqd_t *) sv.sival_ptr);
+
+
+    if(mq_getattr(mqdes, &attr) == -1)
+            handle_error("mq_getattr");
+        buff = malloc(attr.mq_msgsize);
+    if(buff == NULL)
+        handle_error("malloc");
+        
+    printf("Receiver started\n");
+    while(strncmp(buff, "END", 3) != 0){
+        nr = mq_receive(mqdes, buff, (attr.mq_msgsize), 0);
+        if(nr == -1)
+            handle_error("mq_receive");
+        
+        printf("Read %zd bytes from MQ\n", nr);
+        printf("%s\n", (char *)buff);
+    }
+    free(buff);
+    exit(EXIT_SUCCESS);
+    return;
+}
+
 int MQcreate (mqd_t * mq, char * name)
 {
  	//Should create a new messagequeue, use mq as reference pointer so you can reach the handle from anywhere
@@ -36,18 +63,15 @@ int MQread (mqd_t mq, void ** buffer)
 {
     /* Read a msg from a mailslot, return nr Uses mq as reference pointer, so that you can 		reach the handle from anywhere */
     /* should return number of bytes read*/
-    struct mq_attr attr;
-    ssize_t nr;
-    printf("Receiver started\n");
+    struct sigevent sev;
+    sev.sigev_notify = SIGEV_THREAD;
+    sev.sigev_notify_function = received_msg;
+    sev.sigev_notify_attributes = NULL;
+    sev.sigev_value.sival_ptr = &mq;
 
-    if(mq_getattr(mq, &attr) == -1)
-        handle_error("mq_getattr");
-    
-    nr = mq_receive(mq, *buffer, (attr.mq_msgsize), 0);
-    if(nr == -1)
-        handle_error("mq_receive");
-    return (int)nr;
-
+    if(mq_notify(mq, &sev) == -1)
+        handle_error("mq_notify");
+    pause();
 }
 
 int MQwrite (mqd_t mq, void * data)

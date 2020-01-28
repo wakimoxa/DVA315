@@ -6,24 +6,13 @@
 #include <mqueue.h>
 #include <signal.h>
 
-#define handle_error(msg) \
-    do {perror(msg); exit(EXIT_FAILURE); } while(0)
-
 
 void * client_thread(char * name){
     mqd_t mq;
     MQconnect(&mq, name);
-    struct mq_attr attr;
-
-    if(mq_getattr(mq, &attr) == -1)
-        handle_error("mq_getattr");
-    
-    void *buffer = malloc(attr.mq_msgsize);
-    while(strncmp(buffer, "END", 3) != 0){
-        sleep(1);
-        MQread(mq, &buffer);
-        printf("Received msg: %s\n\n", (char*)buffer);
-    }
+    char *buffer;
+    MQread(mq, &buffer);
+    pause();
     return NULL;
 }
 

@@ -14,7 +14,7 @@
 
 extern int MQcreate (mqd_t * mq, char * name);
 extern int MQconnect (mqd_t * mq, char * name);
-extern void * MQread (mqd_t mq, void ** buffer);
+extern int MQread (mqd_t mq, void ** buffer);
 extern int MQwrite (mqd_t mq, void * data);
 int MQclose(mqd_t * mq, char * name);
 
