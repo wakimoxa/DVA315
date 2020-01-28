@@ -24,7 +24,7 @@ void * send_msg(void* input){
     mq = mq_open(name, O_WRONLY);
     if(mq == (mqd_t) -1)
         handle_error("mq_open");
-    if(mq_send(mq, data, strlen(data) + 1, NULL) == -1)
+    if(mq_send(mq, data, strlen(data) + 1, 0) == -1)
         handle_error("mq_send");
     printf("Msg sent\n");
     sleep(4);
@@ -43,19 +43,21 @@ static void received_msg(union sigval sv){
     if(mq_getattr(mqdes, &attr) == -1)
         handle_error("mq_getattr");
     
+        printf("Msg size: %i\n", (int)attr.mq_msgsize);
+
         buff = malloc(attr.mq_msgsize);
     if(buff == NULL)
         handle_error("malloc");
     
-    printf("Exec mq_receive\n");
-    nr = mq_receive(mqdes, buff, attr.mq_msgsize, NULL);
-    if(nr = -1)
+    nr = mq_receive(mqdes, buff, (attr.mq_msgsize), 0);
+    if(nr == -1)
         handle_error("mq_receive");
     
     printf("Read %zd bytes from MQ\n", nr);
     printf("%s", (char *)buff);
     free(buff);
     exit(EXIT_SUCCESS);
+    return;
 }
 
 int main(int argc, char*argv[]){
@@ -74,8 +76,10 @@ int main(int argc, char*argv[]){
     sev.sigev_notify_function = received_msg;
     sev.sigev_notify_attributes = NULL;
     sev.sigev_value.sival_ptr = &mqdes;
+
     if(mq_notify(mqdes, &sev) == -1)
-    handle_error("mq_notify");
+        handle_error("mq_notify");
+    
     pthread_t send_thread;
     struct msg_args *msg = (struct msg_args*)malloc(sizeof(struct msg_args));
     char data[] = "Hello, this is msg\n";
