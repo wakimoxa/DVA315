@@ -10,6 +10,8 @@
 #include <mqueue.h>
 #include <pthread.h>
 #include <errno.h>
+#include <signal.h>
+#include <time.h>
 
 
 extern int MQcreate (mqd_t * mq, char * name);
@@ -17,6 +19,8 @@ extern int MQconnect (mqd_t * mq, char * name);
 extern int MQread (mqd_t mq, void ** buffer);
 extern int MQwrite (mqd_t mq, void * data);
 int MQclose(mqd_t * mq, char * name);
+
+
 
 
 
@@ -37,4 +41,7 @@ typedef struct pt {
 	char		pid[30];	// String containing ID of creating process
 } planet_type;
 
+
+void getRandomPlanet(planet_type * pt);
+void printPlanet(planet_type *pt);
 #endif /* WRAPPER_H */

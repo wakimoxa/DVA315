@@ -21,8 +21,10 @@ void * client_thread(char * name){
     void *buffer = malloc(attr.mq_msgsize);
     while(strncmp(buffer, "END", 3) != 0){
         sleep(1);
-        MQread(mq, &buffer);
-        printf("Received msg: %s\n\n", (char*)buffer);
+        int nr = MQread(mq, &buffer);
+        printf("Bytes read: %i\n", nr);
+        //printf("Received msg: %s\n\n", (char*)buffer);
+        printPlanet(buffer);
     }
     return NULL;
 }
@@ -38,10 +40,12 @@ int main(int argc, char*argv[]){
     MQcreate(&message_queue, argv[1]);
 
     pthread_create(&client, NULL, client_thread, argv[1]);
-    char *buffer;
+    planet_type *buffer = (planet_type*)malloc(sizeof(planet_type));
+    char *placeholder;
     while(strncmp(buffer, "END", 3) != 0){
         printf("Enter text to send here:\n");
-        scanf("%s", buffer);
+        scanf("%s", placeholder);
+        getRandomPlanet(buffer);
         //printf("You entered: \"%s\"\n", buffer);
         MQwrite(message_queue, buffer);
     }

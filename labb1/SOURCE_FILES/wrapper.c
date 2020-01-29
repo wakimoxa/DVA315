@@ -1,6 +1,4 @@
 #include "wrapper.h"
-#include <signal.h>
-
 #define MAX_SIZE 1024
 
 #define handle_error(msg) \
@@ -13,7 +11,7 @@ int MQcreate (mqd_t * mq, char * name)
 {
  	//Should create a new messagequeue, use mq as reference pointer so you can reach the handle from anywhere
 	//Should return 1 on success and 0 on fail
-    printf("Creating %s\n", name);
+    //printf("Creating %s\n", name);
     *mq = mq_open(name, O_WRONLY | O_CREAT, 0666, NULL);
     if(*mq == (mqd_t) -1)
         handle_error("mq_open");
@@ -24,7 +22,7 @@ int MQconnect (mqd_t * mq, char * name)
 {
     /* Connects to an existing mailslot for writing Uses mq as reference pointer, so that you can reach the handle from anywhere*/
     /* Should return 1 on success and 0 on fail*/
-    printf("Connecting to %s\n", name);
+    //printf("Connecting to %s\n", name);
     *mq = mq_open(name, O_RDONLY);
     if(*mq == (mqd_t) -1)
         handle_error("mq_open");
@@ -38,8 +36,6 @@ int MQread (mqd_t mq, void ** buffer)
     /* should return number of bytes read*/
     struct mq_attr attr;
     ssize_t nr;
-    printf("Receiver started\n");
-
     if(mq_getattr(mq, &attr) == -1)
         handle_error("mq_getattr");
     
@@ -54,7 +50,7 @@ int MQwrite (mqd_t mq, void * data)
 {
     /* Write a msg to a mailslot, return nr Uses mq as reference pointer, so that you can 	     reach the handle from anywhere*/
     /* should return number of bytes read         */
-    if(mq_send(mq, data, strlen(data) + 1, 0) == -1)
+    if(mq_send(mq, data, sizeof(planet_type) + 1, 0) == -1)
         handle_error("mq_send");
     return 1;
 }
@@ -70,3 +66,27 @@ if(mq_close(*mq) == -1)
 return 1;
 }
 
+
+
+void getRandomPlanet(planet_type * pt){
+    srand(time(NULL));
+    
+    pt->life = rand() % 10000;
+    pt->mass = rand() % 20000;
+    sprintf(pt->name, "Planet-X-%i", rand() % 100);
+    sprintf(pt->pid, "%i", rand() % 100);
+    pt->sx = rand()  % 100;
+    pt->sy = rand()  % 100;
+    pt->vx = rand()  % 100;
+    pt->vy = rand()  % 100;
+
+}
+
+void printPlanet(planet_type *pt){
+    printf("Planet life: %i\n", pt->life);
+    printf("Planet mass: %f\n", pt->mass);
+    printf("Planet name: %s\n", pt->name);
+    printf("Planet life: %s\n", pt->pid);
+    printf("Planet coordinates: (%f, %f)\n", pt->sx, pt->sy);
+    printf("Planet velocity: (%f, %f)\n", pt->vx, pt->vy);
+}
