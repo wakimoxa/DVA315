@@ -6,6 +6,7 @@ typedef int buffer_item;
 #include <stdio.h>
 #include <pthread.h>
 #include <semaphore.h>
+#include <signal.h>
 
 #define DINING 1
 
@@ -131,6 +132,9 @@ int remove_item(buffer_item *item) {
 pthread_t philosophers[5];
 //int forks[] = {1, 1, 1, 1, 1};
 pthread_mutex_t forks[5];
+sem_t max_dining;
+
+int counter_array[5];
 
 
 //----------------------------------------DINING PHILOSOPHERS SEGMENT--------------------------------------------
@@ -139,36 +143,47 @@ void pickup(int fork_left, int fork_right){
     usleep(10000);
     pthread_mutex_lock(&forks[fork_right]);
     usleep(10000);
-
 }
 
 void putdown(int fork_left, int fork_right){
     pthread_mutex_unlock(&forks[fork_left]);
-
     pthread_mutex_unlock(&forks[fork_right]);
 }
 
 
-
-
 void * philosopher_function(void *index){
-        printf("Started philosopher %i\n", (int) index);
+    counter_array[(int) index] = 0;
+    printf("Started philosopher %i\n", (int) index);
     sleep(2);
     while(1){
         usleep(10000);//Thinking
         printf("Philosopher %i is hungry\n", (int) index);
+        sem_wait(&max_dining);//max 4 philosophers can eat at the same time
         pickup((int) index, ((int) index + 1) % 5);
         printf("Philosopher %i is picked up forks\n", (int) index);
         usleep(10000);//Eating
         printf("Philosopher %i has eaten\n", (int) index);
         putdown((int) index, ((int) index + 1) % 5);
+        sem_post(&max_dining);
         printf("Philosopher %i puts down forks\n", (int) index);
+        counter_array[(int) index]++;
+    }
+}
+
+void intHandler(int test){
+    for(int i = 0; i < 5; i++){
+        printf("Philosopher %i has eaten %i times total\n", i, counter_array[i]);
     }
 }
 
 void dining_philosophers()
 {
     int i;
+
+    signal(SIGINT, intHandler);
+
+    sem_init(&max_dining, 0, 4);
+
     printf("Started DINING PHILOSOPHERS!\n\n");
     for(i = 0; i < 5; i++){
         pthread_mutex_init(&forks[i], NULL);
