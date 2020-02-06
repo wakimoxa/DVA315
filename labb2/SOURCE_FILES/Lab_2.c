@@ -128,21 +128,33 @@ int remove_item(buffer_item *item) {
 }
 //----------------------------------------PRODUCER CONSUMER SEGMENT----------------------------------------------
 //----------------------------------------DINING PHILOSOPHERS VARIABLES------------------------------------------
-pthread_t philosophers[5];
+pthread_t philosophers;
 int forks = {1, 1, 1, 1, 1};
 
 
 
 //----------------------------------------DINING PHILOSOPHERS SEGMENT--------------------------------------------
-void * philosopher_function(int index){
+void * philosopher_function(void *param){
+    int index = (int)param;
     while(1){
-        
+        sleep(1);
+        printf("Philosopher %d is hungry\n");
+        pickup(index, (index + 1) % 5);
+        printf("Philosopher %d is picked up forks\n");
+        sleep(2);//Eating
+        printf("Philosopher %d has eaten\n");
+        putdown(index, (index + 1) % 5);
+        printf("Philosopher %d puts down forks\n");
     }
 }
 
 void dining_philosophers()
 {
-    
+    for(int i = 0; i < 5; i++){
+        pthread_create(&philosophers, NULL, philosopher_function, (void*) i);
+    }
+    pthread_join(philosophers, NULL);
+
 }
 //----------------------------------------DINING PHILOSOPHERS SEGMENT--------------------------------------------
 int main(int argc, char *argv[]) {
