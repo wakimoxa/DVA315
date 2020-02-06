@@ -7,7 +7,7 @@ typedef int buffer_item;
 #include <pthread.h>
 #include <semaphore.h>
 
-#define DINING 0
+#define DINING 1
 
 
 //----------------------------------------PRODUCER CONSUMER SEGMENT----------------------------------------------
@@ -128,33 +128,53 @@ int remove_item(buffer_item *item) {
 }
 //----------------------------------------PRODUCER CONSUMER SEGMENT----------------------------------------------
 //----------------------------------------DINING PHILOSOPHERS VARIABLES------------------------------------------
-pthread_t philosophers;
-int forks = {1, 1, 1, 1, 1};
-
+pthread_t philosophers[5];
+//int forks[] = {1, 1, 1, 1, 1};
+pthread_mutex_t forks[5];
 
 
 //----------------------------------------DINING PHILOSOPHERS SEGMENT--------------------------------------------
-void * philosopher_function(void *param){
-    int index = (int)param;
+void pickup(int fork_left, int fork_right){
+    pthread_mutex_lock(&forks[fork_left]);
+
+    pthread_mutex_lock(&forks[fork_right]);
+}
+
+void putdown(int fork_left, int fork_right){
+    pthread_mutex_unlock(&forks[fork_left]);
+
+    pthread_mutex_unlock(&forks[fork_right]);
+}
+
+
+
+
+void * philosopher_function(int *param){
+    int index = *param;
     while(1){
-        sleep(1);
-        printf("Philosopher %d is hungry\n");
+        sleep(1);//Thinking
+        printf("Philosopher %d is hungry\n", index);
         pickup(index, (index + 1) % 5);
-        printf("Philosopher %d is picked up forks\n");
+        printf("Philosopher %d is picked up forks\n", index);
         sleep(2);//Eating
-        printf("Philosopher %d has eaten\n");
+        printf("Philosopher %d has eaten\n"), index;
         putdown(index, (index + 1) % 5);
-        printf("Philosopher %d puts down forks\n");
+        printf("Philosopher %d puts down forks\n", index);
     }
 }
 
 void dining_philosophers()
 {
-    for(int i = 0; i < 5; i++){
-        pthread_create(&philosophers, NULL, philosopher_function, (void*) i);
+    int i;
+    printf("Started DINING PHILOSOPHERS!\n\n");
+    for(i = 0; i < 5; i++){
+        pthread_mutex_init(&forks[i], NULL);
     }
-    pthread_join(philosophers, NULL);
 
+    for(i = 0; i < 5; i++){
+        pthread_create(&philosophers[i], NULL, philosopher_function, &i);
+    }
+    pause();
 }
 //----------------------------------------DINING PHILOSOPHERS SEGMENT--------------------------------------------
 int main(int argc, char *argv[]) {
