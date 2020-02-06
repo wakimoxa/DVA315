@@ -127,11 +127,22 @@ int remove_item(buffer_item *item) {
     }
 }
 //----------------------------------------PRODUCER CONSUMER SEGMENT----------------------------------------------
+//----------------------------------------DINING PHILOSOPHERS VARIABLES------------------------------------------
+pthread_t philosophers[5];
+int forks = {1, 1, 1, 1, 1};
+
+
 
 //----------------------------------------DINING PHILOSOPHERS SEGMENT--------------------------------------------
+void * philosopher_function(int index){
+    while(1){
+        
+    }
+}
+
 void dining_philosophers()
 {
-
+    
 }
 //----------------------------------------DINING PHILOSOPHERS SEGMENT--------------------------------------------
 int main(int argc, char *argv[]) {
@@ -150,6 +161,7 @@ int main(int argc, char *argv[]) {
     if (DINING == 1)
     {
     	//start dining philosophers
+        dining_philosophers();
     }
     else //Start producer consumer
     {
