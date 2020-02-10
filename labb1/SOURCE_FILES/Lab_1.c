@@ -10,7 +10,7 @@
     do {perror(msg); exit(EXIT_FAILURE); } while(0)
 
 
-void * client_thread(char * name){
+void * client_function(char * name){
     mqd_t mq;
     MQconnect(&mq, name);
     struct mq_attr attr;
@@ -19,37 +19,63 @@ void * client_thread(char * name){
         handle_error("mq_getattr");
     
     void *buffer = malloc(attr.mq_msgsize);
-    while(strncmp(buffer, "END", 3) != 0){
-        sleep(1);
+    while(1){
+        //sleep(1);
         int nr = MQread(mq, &buffer);
         printf("Bytes read: %i\n", nr);
         //printf("Received msg: %s\n\n", (char*)buffer);
-        printPlanet(buffer);
+        planet_type* pt = (planet_type*) buffer;
+        if(strncmp(pt->name, "END", 3) != 0)
+            printPlanet(buffer);
+        else
+            break;
     }
     return NULL;
 }
 
-int main(int argc, char*argv[]){
-    pthread_t client;
+void * server_function(char * name){
     mqd_t message_queue;
+    MQcreate(&message_queue, name);
+    planet_type *buffer = (planet_type*)malloc(sizeof(planet_type));
+    char placeholder[100];
+    while(strncmp(placeholder, "END", 3) != 0){
+        //placeholder = NULL;
+        printf("Enter text to send here: ");
+        scanf("\n%[^\n]%*c", placeholder);
+        if(placeholder){
+            getRandomPlanet(buffer, placeholder);
+            printf("You entered: \"%s\"\n", placeholder);
+            MQwrite(message_queue, buffer);
+        }
+        else{
+            sleep(1);
+        }
+    }
+    return NULL;
+}
 
-    if(argc != 2){
+
+
+int main(int argc, char*argv[]){
+    pthread_t client;//Client thread
+    pthread_t server;//Server thread
+
+    if(argc != 2){ //If no argument is given -> terminate
         fprintf(stderr, "Usage: %s <mq-name>\n", argv[0]);
         exit(EXIT_FAILURE);
     }
-    MQcreate(&message_queue, argv[1]);
+    char server_name[strlen(argv[1])];
+    char client_name[strlen(argv[1])];
 
-    pthread_create(&client, NULL, client_thread, argv[1]);
-    planet_type *buffer = (planet_type*)malloc(sizeof(planet_type));
-    char *placeholder;
-    while(strncmp(buffer, "END", 3) != 0){
-        printf("Enter text to send here:\n");
-        scanf("%s", placeholder);
-        getRandomPlanet(buffer);
-        //printf("You entered: \"%s\"\n", buffer);
-        MQwrite(message_queue, buffer);
-    }
+    strcpy(server_name, argv[1]);
+    strcpy(client_name, argv[1]);
 
+
+    pthread_create(&server, NULL, server_function, argv[1]);
+    sleep(1);
+    pthread_create(&client, NULL, client_function, argv[1]);
+
+    pthread_join(server, NULL);
     pthread_join(client, NULL);
     return 0;
 }

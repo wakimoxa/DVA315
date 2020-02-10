@@ -1,3 +1,11 @@
+/*
+ * wrapper.c
+ *
+ *  Created on: Jan 20, 2020
+ *      Author: student
+ */
+
+
 #include "wrapper.h"
 #define MAX_SIZE 1024
 
@@ -67,26 +75,3 @@ return 1;
 }
 
 
-
-void getRandomPlanet(planet_type * pt, char name[]){
-    srand(time(NULL));
-    
-    pt->life = rand() % 10000;
-    pt->mass = rand() % 20000;
-    strcpy(pt->name, name);
-    sprintf(pt->pid, "%i", rand() % 100);
-    pt->sx = rand()  % 100;
-    pt->sy = rand()  % 100;
-    pt->vx = rand()  % 100;
-    pt->vy = rand()  % 100;
-
-}
-
-void printPlanet(planet_type *pt){
-    printf("Planet life: %i\n", pt->life);
-    printf("Planet mass: %f\n", pt->mass);
-    printf("Planet name: %s\n", pt->name);
-    printf("Planet life: %s\n", pt->pid);
-    printf("Planet coordinates: (%f, %f)\n", pt->sx, pt->sy);
-    printf("Planet velocity: (%f, %f)\n", pt->vx, pt->vy);
-}

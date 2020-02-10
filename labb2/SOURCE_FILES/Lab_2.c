@@ -61,8 +61,10 @@ void *producer(void *param) {
         /* sleep for a random period of time */
         int rNum = rand() / RAND_DIVISOR;
         sleep(rNum);
-        item = count++;
         sem_wait(&empty);
+        pthread_mutex_lock(&mutex);
+
+        item = count++;
         if(insert_item(item)) {
             fprintf(stderr, " Producer %ld report error condition\n", (long) param);
 	        fflush(stdout);
@@ -70,6 +72,7 @@ void *producer(void *param) {
         else {
             printf("producer %ld produced %d\n", (long) param, item);
         }
+        pthread_mutex_unlock(&mutex);
         sem_post(&full);
 	fflush(stdout);
     }
@@ -84,6 +87,8 @@ void *consumer(void *param) {
         int rNum = rand() / RAND_DIVISOR;
         sleep(rNum);
         sem_wait(&full);
+        pthread_mutex_lock(&mutex);
+
         if(remove_item(&item)) {
             fprintf(stderr, "Consumer %ld report error condition\n",(long) param);
 	    fflush(stdout);
@@ -91,6 +96,7 @@ void *consumer(void *param) {
         else {
             printf("consumer %ld consumed %d\n", (long) param, item);
         }
+        pthread_mutex_unlock(&mutex);
         sem_post(&empty);
     }
 }
@@ -100,10 +106,8 @@ int insert_item(buffer_item item) {
     /* When the buffer is not full add the item
     and increment the counter*/
     if(counter < BUFFER_SIZE) {
-        pthread_mutex_lock(&mutex);
         buffer[counter] = item;//critical
         counter++;//critical
-        pthread_mutex_unlock(&mutex);
 
         return 0;
     }
@@ -117,10 +121,8 @@ int remove_item(buffer_item *item) {
     /* When the buffer is not empty remove the item
      and decrement the counter */
     if(counter > 0) {
-        pthread_mutex_lock(&mutex);
         *item = buffer[(counter-1)];//critical
         counter--;//critical
-        pthread_mutex_unlock(&mutex);
         return 0;
     }
     else { /* Error buffer empty */
