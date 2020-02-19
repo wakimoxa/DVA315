@@ -54,8 +54,6 @@ void * server_function(char * name){
     return NULL;
 }
 
-
-
 int main(int argc, char*argv[]){
     pthread_t client;//Client thread
     pthread_t server;//Server thread
@@ -69,7 +67,6 @@ int main(int argc, char*argv[]){
 
     strcpy(server_name, argv[1]);
     strcpy(client_name, argv[1]);
-
 
     pthread_create(&server, NULL, server_function, argv[1]);
     sleep(1);

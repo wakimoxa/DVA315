@@ -16,8 +16,8 @@ int MQcreate (mqd_t * mq, char * name)
     if(*mq == (mqd_t) -1)
         handle_error("mq_open");
     return 1;
-
 }
+
 int MQconnect (mqd_t * mq, char * name)
 {
     /* Connects to an existing mailslot for writing Uses mq as reference pointer, so that you can reach the handle from anywhere*/
@@ -66,8 +66,6 @@ if(mq_close(*mq) == -1)
 return 1;
 }
 
-
-
 void getRandomPlanet(planet_type * pt, char name[]){
     srand(time(NULL));
     
@@ -79,7 +77,6 @@ void getRandomPlanet(planet_type * pt, char name[]){
     pt->sy = rand()  % 100;
     pt->vx = rand()  % 100;
     pt->vy = rand()  % 100;
-
 }
 
 void printPlanet(planet_type *pt){

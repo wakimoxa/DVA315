@@ -63,11 +63,10 @@ void *producer(void *param) {
         sleep(rNum);
         sem_wait(&empty);
         pthread_mutex_lock(&mutex);
-
         item = count++;
         if(insert_item(item)) {
             fprintf(stderr, " Producer %ld report error condition\n", (long) param);
-	        fflush(stdout);
+            fflush(stdout);
         }
         else {
             printf("producer %ld produced %d\n", (long) param, item);
@@ -173,6 +172,7 @@ void * philosopher_function(void *index){
 }
 
 void intHandler(int test){
+    printf("\n");
     for(int i = 0; i < 5; i++){
         printf("Philosopher %i has eaten %i times total\n", i, counter_array[i]);
     }

@@ -15,10 +15,48 @@ GtkWidget *darea;
 planet_type * planet_list = NULL;
 void calculate_planet_pos(planet_type *p1);
 
+//------------------MY FUNCTIONS---------------------//
+void createPlanet(planet_type* pt);
+void insertPlanet(planet_type* pt);
+void removePlanet(planet_type* pt);
+void * mq_thread()
+//------------------MY FUNCTIONS---------------------//
+
+
+
+
+void insertPlanet(planet_type* pt){
+    if(planet_list == NULL){
+        planet_list = pt;
+        return;
+    }
+    planet_type* current_pt;
+    for(current_pt = planet_list; current_pt != NULL; current_pt = current_pt->next);
+    current_pt = pt;
+    return;
+}
+void removePlanet(planet_type *pt){
+    planet_type* current_pt;
+    if(planet_list == pt){
+        planet_list = pt->next;
+        free(pt);
+        return;
+    }
+    for(current_pt = planet_list; current_pt->next != pt && current_pt == NULL; current_pt = current_pt->next);
+    if(current_pt == NULL){
+        printf("Could not find planet to remove!\n");
+        return;
+    }
+    current_pt->next = current_pt->next->next;
+    free(pt);
+}
+
+
 void * planet_thread (void*args)
 {
 	planet_type * this_planet = (planet_type *)args;
 	calculate_planet_pos(this_planet);
+
 }
 static gboolean on_draw_event(GtkWidget *widget, cairo_t *cr, //Draw event for cairo, will be triggered each time a draw event is executed
     gpointer user_data)
@@ -113,9 +151,9 @@ int main(int argc, char *argv[]) //Main function
     darea = gtk_drawing_area_new(); //Create draw area, which will be used under top layer window
     gtk_container_add(GTK_CONTAINER(window), darea); //add draw area to top layer window
     g_signal_connect(G_OBJECT(darea), "draw",
-                     G_CALLBACK(on_draw_event), NULL); //Connect callback function for the draw event of darea
+                    G_CALLBACK(on_draw_event), NULL); //Connect callback function for the draw event of darea
     g_signal_connect(window, "destroy", //Destroy event, not implemented yet, altough not needed
-                     G_CALLBACK(gtk_main_quit), NULL);
+                    G_CALLBACK(gtk_main_quit), NULL);
 
     gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER); //Set position of window
     gtk_window_set_default_size(GTK_WINDOW(window), 800, 600); //Set size of window

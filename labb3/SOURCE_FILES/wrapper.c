@@ -20,7 +20,7 @@ int MQcreate (mqd_t * mq, char * name)
  	//Should create a new messagequeue, use mq as reference pointer so you can reach the handle from anywhere
 	//Should return 1 on success and 0 on fail
     //printf("Creating %s\n", name);
-    *mq = mq_open(name, O_WRONLY | O_CREAT, 0666, NULL);
+    *mq = mq_open(name, O_RDWR | O_CREAT, 0666, NULL);
     if(*mq == (mqd_t) -1)
         handle_error("mq_open");
     return 1;
@@ -31,7 +31,7 @@ int MQconnect (mqd_t * mq, char * name)
     /* Connects to an existing mailslot for writing Uses mq as reference pointer, so that you can reach the handle from anywhere*/
     /* Should return 1 on success and 0 on fail*/
     //printf("Connecting to %s\n", name);
-    *mq = mq_open(name, O_RDONLY);
+    *mq = mq_open(name, O_RDWR);
     if(*mq == (mqd_t) -1)
         handle_error("mq_open");
 
