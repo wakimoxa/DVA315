@@ -3,6 +3,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include "wrapper.h"
+#include <math.h>
 
 #define DT 10
 static void do_drawing(cairo_t *);
@@ -18,14 +19,14 @@ GtkWidget *darea;
 
 planet_type * planet_list = NULL;
 void calculate_planet_pos(planet_type *p1);
-
+void * planet_thread (void*args);
 //------------------MY FUNCTIONS---------------------//
 void createPlanet(planet_type* pt);
 void insertPlanet(planet_type* pt);
 void removePlanet(planet_type* pt);
 void * mq_reader();
 //------------------MY FUNCTIONS---------------------//
-
+pthread_t all_planet_thread;
 
 void * mq_reader(){
     mqd_t message_queue;
@@ -46,7 +47,10 @@ void * mq_reader(){
         //printf("Received msg: %s\n\n", (char*)buffer);
         planet_type* pt = (planet_type*) buffer;
         if(strncmp(pt->name, "END", 3) != 0)
-            insertPlanet(buffer);
+        {
+            insertPlanet(pt);
+            pthread_create(&all_planet_thread, NULL, planet_thread, (void*)pt);
+        }
         else
             break;
     }
