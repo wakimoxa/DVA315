@@ -12,6 +12,10 @@ int x2 = 0;
 GtkWidget *window;
 GtkWidget *darea;
 
+
+#define handle_error(msg) \
+    do {perror(msg); exit(EXIT_FAILURE); } while(0)
+
 planet_type * planet_list = NULL;
 void calculate_planet_pos(planet_type *p1);
 
@@ -19,11 +23,36 @@ void calculate_planet_pos(planet_type *p1);
 void createPlanet(planet_type* pt);
 void insertPlanet(planet_type* pt);
 void removePlanet(planet_type* pt);
-void * mq_thread()
+void * mq_reader();
 //------------------MY FUNCTIONS---------------------//
 
 
+void * mq_reader(){
+    mqd_t message_queue;
+    char * name = "/server_mq";
+    MQcreate(&message_queue, name);
 
+    struct mq_attr attr;
+
+    if(mq_getattr(message_queue, &attr) == -1)
+        handle_error("mq_getattr");
+
+
+    void *buffer = malloc(attr.mq_msgsize);
+    while(1){
+        //sleep(1);
+        int nr = MQread(message_queue, &buffer);
+        printf("Server received %i bytes.\n", nr);
+        //printf("Received msg: %s\n\n", (char*)buffer);
+        planet_type* pt = (planet_type*) buffer;
+        if(strncmp(pt->name, "END", 3) != 0)
+            insertPlanet(buffer);
+        else
+            break;
+    }
+    return NULL;
+
+}
 
 void insertPlanet(planet_type* pt){
     if(planet_list == NULL){
@@ -141,7 +170,8 @@ void calculate_planet_pos(planet_type *p1)  //Function for calculating the posit
 int main(int argc, char *argv[]) //Main function
 {
     //----------------------------------------Variable declarations should be placed below---------------------------------
-	pthread_t i_am_thread;
+	pthread_t mq_thread;
+
 
     //----------------------------------------Variable declarations should be placed Above---------------------------------
 
@@ -165,6 +195,7 @@ int main(int argc, char *argv[]) //Main function
 
     //-------------------------------Insert code for pthreads below------------------------------------------------
     //Create MQ_listener thread
+    pthread_create(&mq_thread, NULL, mq_reader, NULL);
     //-------------------------------Insert code for pthreads above------------------------------------------------
 
 
