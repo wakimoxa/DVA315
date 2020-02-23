@@ -55,7 +55,6 @@ void * mq_reader(){
             break;
     }
     return NULL;
-
 }
 
 void insertPlanet(planet_type* pt){
@@ -100,7 +99,6 @@ static gboolean on_draw_event(GtkWidget *widget, cairo_t *cr, //Draw event for c
 
 static void do_drawing(cairo_t *cr) //Do the drawing against the cairo surface area cr
 {
-
     cairo_set_source_rgb(cr, 0, 0, 0); //Set RGB source of cairo, 0,0,0 = black
     x++; //dummy calculation
     y++;
@@ -108,8 +106,8 @@ static void do_drawing(cairo_t *cr) //Do the drawing against the cairo surface a
     cairo_select_font_face(cr, "Purisa",
         CAIRO_FONT_SLANT_NORMAL,
         CAIRO_FONT_WEIGHT_BOLD);
-    cairo_move_to(cr, 20, 30);
-    cairo_show_text(cr, "You probably do not want to debug using text output, but you can");
+    //cairo_move_to(cr, 20, 30);
+    //cairo_show_text(cr, "You probably do not want to debug using text output, but you can");
     cairo_arc(cr, x,y,50,0,2*3.1415); //Create cairo shape: Parameters: Surface area, x pos, y pos, radius, Angle 1, Angle 2
     cairo_fill(cr);
     cairo_arc(cr, x2+100,0,25,0,2*3.1415); //These drawings are just examples, remove them once you understood how to draw your planets
@@ -119,7 +117,11 @@ static void do_drawing(cairo_t *cr) //Do the drawing against the cairo surface a
     // --------- cairo_arc(cr, planet.xpos, planet.ypos, 10, 0, 2*3.1415)
     // --------- cairo_fill(cr)
     //------------------------------------------Insert planet drawings below-------------------------------------------
-
+    planet_type* current;
+    for(current = planet_list; current != NULL; current = current->next){
+        cairo_arc(cr, current->sx, current->sy, current->mass, 0, 2*3.1415);
+        cairo_fill(cr);
+    }
 
 
 
