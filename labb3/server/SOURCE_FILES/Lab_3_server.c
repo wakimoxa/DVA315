@@ -49,7 +49,6 @@ void * mq_reader(){
         if(strncmp(pt->name, "END", 3) != 0)
         {
             insertPlanet(pt);
-            pthread_create(&all_planet_thread, NULL, planet_thread, (void*)pt);
         }
         else
             break;
@@ -74,7 +73,7 @@ void removePlanet(planet_type *pt){
         free(pt);
         return;
     }
-    for(current_pt = planet_list; current_pt->next != pt && current_pt == NULL; current_pt = current_pt->next);
+    for(current_pt = planet_list; current_pt->next != pt && current_pt != NULL; current_pt = current_pt->next);
     if(current_pt == NULL){
         printf("Could not find planet to remove!\n");
         return;
@@ -88,11 +87,19 @@ void * planet_thread (void*args)
 {
 	planet_type * this_planet = (planet_type *)args;
 	calculate_planet_pos(this_planet);
-
+    return NULL;
 }
 static gboolean on_draw_event(GtkWidget *widget, cairo_t *cr, //Draw event for cairo, will be triggered each time a draw event is executed
     gpointer user_data)
 {
+    planet_type * current;
+    if(planet_list != NULL){
+        for(current = planet_list; current != NULL; current = current->next){
+            pthread_create(&all_planet_thread, NULL, planet_thread, (void*)current);
+        }
+        pthread_join(&all_planet_thread, NULL);
+    }
+
     do_drawing(cr); //Launch the actual draw method
     return FALSE; //Return something
 }
@@ -100,18 +107,15 @@ static gboolean on_draw_event(GtkWidget *widget, cairo_t *cr, //Draw event for c
 static void do_drawing(cairo_t *cr) //Do the drawing against the cairo surface area cr
 {
     cairo_set_source_rgb(cr, 0, 0, 0); //Set RGB source of cairo, 0,0,0 = black
-    x++; //dummy calculation
-    y++;
-    x2++;
     cairo_select_font_face(cr, "Purisa",
         CAIRO_FONT_SLANT_NORMAL,
         CAIRO_FONT_WEIGHT_BOLD);
     //cairo_move_to(cr, 20, 30);
     //cairo_show_text(cr, "You probably do not want to debug using text output, but you can");
-    cairo_arc(cr, x,y,50,0,2*3.1415); //Create cairo shape: Parameters: Surface area, x pos, y pos, radius, Angle 1, Angle 2
-    cairo_fill(cr);
-    cairo_arc(cr, x2+100,0,25,0,2*3.1415); //These drawings are just examples, remove them once you understood how to draw your planets
-    cairo_fill(cr);
+    //cairo_arc(cr, x,y,50,0,2*3.1415); //Create cairo shape: Parameters: Surface area, x pos, y pos, radius, Angle 1, Angle 2
+    //cairo_fill(cr);
+    //cairo_arc(cr, x2+100,0,25,0,2*3.1415); //These drawings are just examples, remove them once you understood how to draw your planets
+    //cairo_fill(cr);
     //Printing planets should reasonably be done something like this:
     // --------- for all planets in list:
     // --------- cairo_arc(cr, planet.xpos, planet.ypos, 10, 0, 2*3.1415)
@@ -137,6 +141,7 @@ GtkTickCallback on_frame_tick(GtkWidget * widget, GdkFrameClock * frame_clock, g
 
 void calculate_planet_pos(planet_type *p1)  //Function for calculating the position of a planet, relative to all other planets in the system
 {
+    printf("Calculating planet pos\n");
     planet_type *current = planet_list; //Poiinter to head in the linked list
     //Variable declarations
     double Atotx = 0;

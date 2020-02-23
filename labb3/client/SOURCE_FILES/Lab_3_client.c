@@ -51,6 +51,8 @@ int main(int argc, char*argv[])
 		char* name;
 		double mass, Px, Py, Vx, Vy;
 		int life;
+
+		/*
 		printf("Enter planet name: ");
 		scanf("%s", name);
 		printf("Enter planet mass: ");
@@ -61,7 +63,13 @@ int main(int argc, char*argv[])
 		scanf("%lf %lf", &Vx, &Vy);
 		printf("Enter planet life: ");
 		scanf("%lf", &life);
-		
+		*/
+		scanf("\n");
+		strcpy(name, "PlanetName");
+		mass = 30;
+		Px = Py = 200;
+		Vx = Vy = 2;
+		life = 10000000;
 		getPlanet(buffer, name, mass, Px, Py, Vx, Vy, life);
 
 		MQwrite(mq_server, buffer);
