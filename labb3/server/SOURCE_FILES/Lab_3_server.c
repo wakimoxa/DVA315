@@ -27,6 +27,7 @@ void removePlanet(planet_type* pt);
 void * mq_reader();
 //------------------MY FUNCTIONS---------------------//
 pthread_t all_planet_thread;
+pthread_mutex_t calc_lock;
 
 void * mq_reader(){
     mqd_t message_queue;
@@ -39,9 +40,9 @@ void * mq_reader(){
         handle_error("mq_getattr");
 
 
-    void *buffer = malloc(attr.mq_msgsize);
     while(1){
         //sleep(1);
+        void *buffer = malloc(attr.mq_msgsize);
         int nr = MQread(message_queue, &buffer);
         printf("Server received %i bytes.\n", nr);
         //printf("Received msg: %s\n\n", (char*)buffer);
@@ -62,8 +63,9 @@ void insertPlanet(planet_type* pt){
         return;
     }
     planet_type* current_pt;
-    for(current_pt = planet_list; current_pt != NULL; current_pt = current_pt->next);
-    current_pt = pt;
+    for(current_pt = planet_list; current_pt->next != NULL; current_pt = current_pt->next);
+    current_pt->next = pt;
+    pt->next = NULL;
     return;
 }
 void removePlanet(planet_type *pt){
@@ -86,20 +88,23 @@ void removePlanet(planet_type *pt){
 void * planet_thread (void*args)
 {
 	planet_type * this_planet = (planet_type *)args;
+    pthread_mutex_lock(&calc_lock);
 	calculate_planet_pos(this_planet);
+    pthread_mutex_unlock(&calc_lock);
     return NULL;
 }
 static gboolean on_draw_event(GtkWidget *widget, cairo_t *cr, //Draw event for cairo, will be triggered each time a draw event is executed
     gpointer user_data)
 {
-    planet_type * current;
     if(planet_list != NULL){
+        planet_type * current;
+        int i = 0;
         for(current = planet_list; current != NULL; current = current->next){
             pthread_create(&all_planet_thread, NULL, planet_thread, (void*)current);
+            printf("planet loop: %i\n", ++i);
         }
-        pthread_join(&all_planet_thread, NULL);
+        pthread_join(all_planet_thread, NULL);
     }
-
     do_drawing(cr); //Launch the actual draw method
     return FALSE; //Return something
 }
@@ -141,7 +146,6 @@ GtkTickCallback on_frame_tick(GtkWidget * widget, GdkFrameClock * frame_clock, g
 
 void calculate_planet_pos(planet_type *p1)  //Function for calculating the position of a planet, relative to all other planets in the system
 {
-    printf("Calculating planet pos\n");
     planet_type *current = planet_list; //Poiinter to head in the linked list
     //Variable declarations
     double Atotx = 0;
@@ -182,7 +186,7 @@ int main(int argc, char *argv[]) //Main function
 {
     //----------------------------------------Variable declarations should be placed below---------------------------------
 	pthread_t mq_thread;
-
+    pthread_mutex_init(&calc_lock, NULL);
 
     //----------------------------------------Variable declarations should be placed Above---------------------------------
 

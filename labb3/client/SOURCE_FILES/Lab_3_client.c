@@ -26,6 +26,7 @@ void getPlanet(planet_type * pt, char* name, double mass, double Px, double Py, 
 	pt->sy = Py;
 	pt->vx = Vx;
 	pt->vy = Vy;
+	pt->next = NULL;
 }
 
 int main(int argc, char*argv[])
@@ -48,7 +49,7 @@ int main(int argc, char*argv[])
 
 	//loop
 	while(1){
-		char* name;
+		char* name = (char*)malloc(sizeof(char)*20);;
 		double mass, Px, Py, Vx, Vy;
 		int life;
 
@@ -64,11 +65,10 @@ int main(int argc, char*argv[])
 		printf("Enter planet life: ");
 		scanf("%lf", &life);
 		*/
-		scanf("\n");
-		strcpy(name, "PlanetName");
+		scanf("%s", name);
 		mass = 30;
 		Px = Py = 200;
-		Vx = Vy = 2;
+		Vx = Vy = 0.01;
 		life = 10000000;
 		getPlanet(buffer, name, mass, Px, Py, Vx, Vy, life);
 
