@@ -12,6 +12,11 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include "wrapper.h"
+#include <unistd.h>
+
+
+#define handle_error(msg) \
+    do {perror(msg); exit(EXIT_FAILURE); } while(0)
 
 void getPlanet(planet_type * pt, char* name, double mass, double Px, double Py, double Vx, double Vy, int life);
 
@@ -29,31 +34,60 @@ void getPlanet(planet_type * pt, char* name, double mass, double Px, double Py, 
 	pt->next = NULL;
 }
 
+void * mq_reader(void*args){
+	mqd_t message_queue;
+    char * name = (char*)args;
+	//MQclose(&message_queue, name);
+    MQcreate(&message_queue, name);
+
+    struct mq_attr attr;
+
+    if(mq_getattr(message_queue, &attr) == -1)
+        handle_error("mq_getattr");
+    while(1){
+        //sleep(1);
+        void *buffer = malloc(attr.mq_msgsize);
+        int nr = MQread(message_queue, &buffer);
+        printf("Server received %i bytes.\n", nr);
+        //printf("Received msg: %s\n\n", (char*)buffer);
+        char* message = (char*) buffer;
+        if(strncmp(message, "END", 3) != 0)
+        {
+            printf("%s\n", message);
+        }
+        else
+            break;
+    }
+    return NULL;
+}
+
+pthread_t mq_reader_thread;
+
 int main(int argc, char*argv[])
 {
 
 	//setup
 	printf("Hello i'm a client with pid: %i\n\n", getpid());
 	mqd_t mq_server;
-	mqd_t mq_client;
 
 	char* client_name = (char*)malloc(sizeof(char)*20);
 	sprintf(client_name, "/mq_%i", getpid());
-	MQcreate(&mq_client, client_name);
 
 	char* server_name = "/server_mq";
 	MQconnect(&mq_server, server_name);
 
-	planet_type *buffer = (planet_type*)malloc(sizeof(planet_type));
+	pthread_create(&mq_reader_thread, NULL, mq_reader, (void*)client_name);
+
 
 
 	//loop
 	while(1){
+		planet_type *buffer = (planet_type*)malloc(sizeof(planet_type));
+
 		char* name = (char*)malloc(sizeof(char)*20);;
 		double mass, Px, Py, Vx, Vy;
 		int life;
 
-		/*
 		printf("Enter planet name: ");
 		scanf("%s", name);
 		printf("Enter planet mass: ");
@@ -63,17 +97,16 @@ int main(int argc, char*argv[])
 		printf("Enter planet Vel: ");
 		scanf("%lf %lf", &Vx, &Vy);
 		printf("Enter planet life: ");
-		scanf("%lf", &life);
-		*/
-		scanf("%s", name);
-		mass = 30;
-		Px = Py = 200;
-		Vx = Vy = 0.01;
-		life = 10000000;
+		scanf("%i", &life);
+
 		getPlanet(buffer, name, mass, Px, Py, Vx, Vy, life);
 
-		MQwrite(mq_server, buffer);
+		do{
+			MQwrite(mq_server, buffer);
+			usleep(500000);
+		}while(strncmp(name, "qwe", 3) == 0);
 
+		free(buffer);
 	}
 
 

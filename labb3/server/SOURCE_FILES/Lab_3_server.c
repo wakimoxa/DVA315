@@ -12,7 +12,8 @@ int y = 0;
 int x2 = 0;
 GtkWidget *window;
 GtkWidget *darea;
-
+int width = 800;
+int height = 600;
 
 #define handle_error(msg) \
     do {perror(msg); exit(EXIT_FAILURE); } while(0)
@@ -32,6 +33,7 @@ pthread_mutex_t calc_lock;
 void * mq_reader(){
     mqd_t message_queue;
     char * name = "/server_mq";
+    //MQclose(&message_queue, name);
     MQcreate(&message_queue, name);
 
     struct mq_attr attr;
@@ -84,13 +86,42 @@ void removePlanet(planet_type *pt){
     free(pt);
 }
 
+void planetDied(char * msg, char*name){
+    mqd_t mq;
+    MQconnect(&mq, name);
+    MQwrite(mq, (void*)msg);
+    MQclose(&mq, name);
+}
+
+
 
 void * planet_thread (void*args)
 {
 	planet_type * this_planet = (planet_type *)args;
-    pthread_mutex_lock(&calc_lock);
+    //pthread_mutex_lock(&calc_lock);
 	calculate_planet_pos(this_planet);
-    pthread_mutex_unlock(&calc_lock);
+    //pthread_mutex_unlock(&calc_lock);
+    if(this_planet->life < 0){
+        char* name = (char*)malloc(sizeof(char)*100);
+        char* msg = (char*)malloc(sizeof(char)*100);
+        sprintf(name, "/mq_%s", this_planet->pid);
+        sprintf(msg, "Your planet \"%s\" has died. ", this_planet->name);
+        planetDied(msg, name);
+        free(name);
+        free(msg);
+        removePlanet(this_planet);
+    }
+    if(this_planet->sx < 0 || this_planet->sy < 0 || this_planet->sx > width || this_planet->sy > height){
+        char* name = (char*)malloc(sizeof(char)*100);
+        char* msg = (char*)malloc(sizeof(char)*100);
+        sprintf(name, "/mq_%s", this_planet->pid);
+        sprintf(msg, "Your planet \"%s\" went out of bounds and has therefore died.", this_planet->name);
+        planetDied(msg, name);
+        free(name);
+        free(msg);
+        removePlanet(this_planet);
+    }
+
     return NULL;
 }
 static gboolean on_draw_event(GtkWidget *widget, cairo_t *cr, //Draw event for cairo, will be triggered each time a draw event is executed
@@ -98,17 +129,22 @@ static gboolean on_draw_event(GtkWidget *widget, cairo_t *cr, //Draw event for c
 {
     if(planet_list != NULL){
         planet_type * current;
-        int i = 0;
         for(current = planet_list; current != NULL; current = current->next){
             pthread_create(&all_planet_thread, NULL, planet_thread, (void*)current);
-            printf("planet loop: %i\n", ++i);
         }
         pthread_join(all_planet_thread, NULL);
     }
     do_drawing(cr); //Launch the actual draw method
+
+
     return FALSE; //Return something
 }
 
+static void on_size_allocate (GtkWidget *widget, GtkAllocation *allocation)
+{
+    gtk_window_get_size (window, &width, &height);
+    printf("Window size: (%i, %i)\n", width, height);
+}
 static void do_drawing(cairo_t *cr) //Do the drawing against the cairo surface area cr
 {
     cairo_set_source_rgb(cr, 0, 0, 0); //Set RGB source of cairo, 0,0,0 = black
@@ -128,7 +164,7 @@ static void do_drawing(cairo_t *cr) //Do the drawing against the cairo surface a
     //------------------------------------------Insert planet drawings below-------------------------------------------
     planet_type* current;
     for(current = planet_list; current != NULL; current = current->next){
-        cairo_arc(cr, current->sx, current->sy, current->mass, 0, 2*3.1415);
+        cairo_arc(cr, current->sx, current->sy, 10, 0, 2*3.1415);
         cairo_fill(cr);
     }
 
@@ -199,6 +235,8 @@ int main(int argc, char *argv[]) //Main function
                     G_CALLBACK(on_draw_event), NULL); //Connect callback function for the draw event of darea
     g_signal_connect(window, "destroy", //Destroy event, not implemented yet, altough not needed
                     G_CALLBACK(gtk_main_quit), NULL);
+    
+    g_signal_connect(window, "size-allocate", G_CALLBACK(on_size_allocate), NULL);
 
     gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER); //Set position of window
     gtk_window_set_default_size(GTK_WINDOW(window), 800, 600); //Set size of window
