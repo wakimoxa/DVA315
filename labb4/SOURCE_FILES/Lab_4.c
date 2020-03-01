@@ -20,7 +20,7 @@
 #define sched_MQ 3
 
 #define QUEUE_SIZE 10
-int sched_type = sched_RR;
+int sched_type = sched_SJF;
 int finished = 0;
 int context_switch_program_exit = 0;
 int context_switch = 0;
@@ -217,7 +217,7 @@ task * first_to_last (task * head)
 void readTaskset_n(char * filepath)
 {
 	FILE *reads;											//File handle
-	char * sp = "/home/student/Desktop/Labs_material/taskset.txt";								//File path
+	char * sp = "/home/filip/C_programs/DVA315/labb4/tasks.txt";//File path
     reads=fopen(sp, "r");									//Open file
     task * data_struct = malloc(sizeof(task));				//Allocate data
     if (reads==NULL) {										//If reading fails, return
@@ -269,7 +269,21 @@ task * scheduler_n()
 		}
 		if (sched_type == sched_SJF) 		//Here is where you implement your EDF scheduling algorithm
 		{
-			return ready_queue;
+			task * SJ = NULL;
+			task * current;
+			for(current = ready_queue; current != NULL; current = current->next){
+				if(SJ == NULL){
+					SJ = current;
+				}
+				else
+				{
+					if(current->quantum < SJ->quantum){
+						SJ = current;
+					}
+				}
+				
+			}
+			return current;
 		}
 		if (sched_type == sched_MQ) 		//Here is where you implement your MQ scheduling algorithm,
 		{
