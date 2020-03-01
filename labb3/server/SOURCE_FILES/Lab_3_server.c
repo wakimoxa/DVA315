@@ -4,6 +4,7 @@
 #include <semaphore.h>
 #include "wrapper.h"
 #include <math.h>
+#include <signal.h>
 
 #define DT 10
 static void do_drawing(cairo_t *);
@@ -29,23 +30,25 @@ void * mq_reader();
 //------------------MY FUNCTIONS---------------------//
 pthread_t all_planet_thread;
 pthread_mutex_t calc_lock;
+mqd_t mq_server;
+
+
 
 void * mq_reader(){
-    mqd_t message_queue;
     char * name = "/server_mq";
     //MQclose(&message_queue, name);
-    MQcreate(&message_queue, name);
+    MQcreate(&mq_server, name);
 
     struct mq_attr attr;
 
-    if(mq_getattr(message_queue, &attr) == -1)
+    if(mq_getattr(mq_server, &attr) == -1)
         handle_error("mq_getattr");
 
 
     while(1){
         //sleep(1);
         void *buffer = malloc(attr.mq_msgsize);
-        int nr = MQread(message_queue, &buffer);
+        int nr = MQread(mq_server, &buffer);
         printf("Server received %i bytes.\n", nr);
         //printf("Received msg: %s\n\n", (char*)buffer);
         planet_type* pt = (planet_type*) buffer;
@@ -218,11 +221,16 @@ void calculate_planet_pos(planet_type *p1)  //Function for calculating the posit
     p1->sy = p1->sy + (p1->vy * DT);
     p1->life -= 1;
 }
+
+void intHandler(int test){
+    MQclose(&mq_server, "xd");
+}
+
 int main(int argc, char *argv[]) //Main function
 {
     //----------------------------------------Variable declarations should be placed below---------------------------------
 	pthread_t mq_thread;
-    pthread_mutex_init(&calc_lock, NULL);
+    //pthread_mutex_init(&calc_lock, NULL);
 
     //----------------------------------------Variable declarations should be placed Above---------------------------------
 
@@ -251,6 +259,7 @@ int main(int argc, char *argv[]) //Main function
     pthread_create(&mq_thread, NULL, mq_reader, NULL);
     //-------------------------------Insert code for pthreads above------------------------------------------------
 
+    signal(SIGINT, intHandler);
 
     gtk_main();//Call gtk_main which handles basic GUI functionality
     return 0;

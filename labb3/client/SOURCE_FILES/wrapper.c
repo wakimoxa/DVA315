@@ -71,7 +71,7 @@ int MQclose(mqd_t * mq, char * name)
 if(mq_close(*mq) == -1)
     handle_error("mq_close");
 
-return 1;
+    return 1;
 }
 
 

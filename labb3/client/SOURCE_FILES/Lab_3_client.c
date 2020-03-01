@@ -13,12 +13,16 @@
 #include <pthread.h>
 #include "wrapper.h"
 #include <unistd.h>
+#include <signal.h>
 
 
 #define handle_error(msg) \
     do {perror(msg); exit(EXIT_FAILURE); } while(0)
 
 void getPlanet(planet_type * pt, char* name, double mass, double Px, double Py, double Vx, double Vy, int life);
+
+mqd_t mq_server;
+mqd_t mq_client;
 
 
 
@@ -35,19 +39,18 @@ void getPlanet(planet_type * pt, char* name, double mass, double Px, double Py, 
 }
 
 void * mq_reader(void*args){
-	mqd_t message_queue;
     char * name = (char*)args;
 	//MQclose(&message_queue, name);
-    MQcreate(&message_queue, name);
+    MQcreate(&mq_client, name);
 
     struct mq_attr attr;
 
-    if(mq_getattr(message_queue, &attr) == -1)
+    if(mq_getattr(mq_client, &attr) == -1)
         handle_error("mq_getattr");
     while(1){
         //sleep(1);
         void *buffer = malloc(attr.mq_msgsize);
-        int nr = MQread(message_queue, &buffer);
+        int nr = MQread(mq_client, &buffer);
         printf("Server received %i bytes.\n", nr);
         //printf("Received msg: %s\n\n", (char*)buffer);
         char* message = (char*) buffer;
@@ -63,12 +66,19 @@ void * mq_reader(void*args){
 
 pthread_t mq_reader_thread;
 
+void intHandler(int test)
+{
+	MQclose(&mq_client, "hehe xd, this is useless");
+	MQclose(&mq_server, "hehe xd, this is useless");
+}
+
+
+
 int main(int argc, char*argv[])
 {
 
 	//setup
 	printf("Hello i'm a client with pid: %i\n\n", getpid());
-	mqd_t mq_server;
 
 	char* client_name = (char*)malloc(sizeof(char)*20);
 	sprintf(client_name, "/mq_%i", getpid());
@@ -78,7 +88,7 @@ int main(int argc, char*argv[])
 
 	pthread_create(&mq_reader_thread, NULL, mq_reader, (void*)client_name);
 
-
+    signal(SIGINT, intHandler);
 
 	//loop
 	while(1){
