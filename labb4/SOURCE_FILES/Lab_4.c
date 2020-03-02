@@ -44,6 +44,9 @@ task * waiting_queue = NULL;
 task * exec_task;
 task * idle_task;
 
+task * high_priority;
+task * medium_priority;
+task * low_priority;
 
 
 task tasks[QUEUE_SIZE]; //Queue
@@ -213,6 +216,109 @@ task * first_to_last (task * head)
 	return new_front;
 
 }
+//---my sorting functions-----
+// Returns the last node of the list 
+task *getTail(task *cur) 
+{ 
+    while (cur != NULL && cur->next != NULL) 
+        cur = cur->next; 
+    return cur; 
+} 
+
+// Partitions the list taking the last element as the pivot 
+task *partition(task *head, task *end, 
+                    task **newHead, task **newEnd) 
+{ 
+    task *pivot = end; 
+    task *prev = NULL, *cur = head, *tail = pivot; 
+  
+    // During partition, both the head and end of the list might change 
+    // which is updated in the newHead and newEnd variables 
+    while (cur != pivot) 
+    { 
+        if (cur->quantum < pivot->quantum) 
+        { 
+            // First node that has a value less than the pivot - becomes 
+            // the new head 
+            if ((*newHead) == NULL) 
+                (*newHead) = cur; 
+  
+            prev = cur;  
+            cur = cur->next; 
+        } 
+        else // If cur node is greater than pivot 
+        { 
+            // Move cur node to next of tail, and change tail 
+            if (prev) 
+                prev->next = cur->next; 
+            task *tmp = cur->next; 
+            cur->next = NULL; 
+            tail->next = cur; 
+            tail = cur; 
+            cur = tmp; 
+        } 
+    } 
+  
+    // If the pivot data is the smallest element in the current list, 
+    // pivot becomes the head 
+    if ((*newHead) == NULL) 
+        (*newHead) = pivot; 
+  
+    // Update newEnd to the current last node 
+    (*newEnd) = tail; 
+  
+    // Return the pivot node 
+    return pivot; 
+} 
+  
+  
+//here the sorting happens exclusive of the end node 
+task *quickSortRecur(task *head, task *end) 
+{ 
+    // base condition 
+    if (!head || head == end) 
+        return head; 
+  
+    task *newHead = NULL, *newEnd = NULL; 
+  
+    // Partition the list, newHead and newEnd will be updated 
+    // by the partition function 
+    task *pivot = partition(head, end, &newHead, &newEnd); 
+  
+    // If pivot is the smallest element - no need to recur for 
+    // the left part. 
+    if (newHead != pivot) 
+    { 
+        // Set the node before the pivot node as NULL 
+        task *tmp = newHead; 
+        while (tmp->next != pivot) 
+            tmp = tmp->next; 
+        tmp->next = NULL; 
+  
+        // Recur for the list before pivot 
+        newHead = quickSortRecur(newHead, tmp); 
+  
+        // Change next of last node of the left half to pivot 
+        tmp = getTail(newHead); 
+        tmp->next = pivot; 
+    } 
+  
+    // Recur for the list after the pivot element 
+    pivot->next = quickSortRecur(pivot->next, newEnd); 
+  
+    return newHead; 
+} 
+  
+// The main function for quick sort. This is a wrapper over recursive 
+// function quickSortRecur() 
+void quickSort(task **headRef) 
+{ 
+    (*headRef) = quickSortRecur(*headRef, getTail(*headRef)); 
+    return; 
+} 
+
+//---my sorting functions-----
+
 //------------------Reads a taskset from file and inserts them to ready queue------------------
 void readTaskset_n(char * filepath)
 {
@@ -258,6 +364,8 @@ void OS_wakeup_n()
 	}
 }
 
+
+
 //------------------Scheduler, returns the task to be executed ------------------
 task * scheduler_n()
 {
@@ -269,21 +377,8 @@ task * scheduler_n()
 		}
 		if (sched_type == sched_SJF) 		//Here is where you implement your EDF scheduling algorithm
 		{
-			task * SJ = NULL;
-			task * current;
-			for(current = ready_queue; current != NULL; current = current->next){
-				if(SJ == NULL){
-					SJ = current;
-				}
-				else
-				{
-					if(current->quantum < SJ->quantum){
-						SJ = current;
-					}
-				}
-				
-			}
-			return current;
+			quickSort(&ready_queue);
+			return ready_queue;
 		}
 		if (sched_type == sched_MQ) 		//Here is where you implement your MQ scheduling algorithm,
 		{
@@ -328,7 +423,7 @@ void dispatch_n(task* exec)
 	{
 		printf("Task %d has executed and finished its quanta - Total context switches: %d \n", exec->ID, context_switches);	//Printout task info
 		ready_queue->release_time = ready_queue->release_time+ready_queue->period;
-		waiting_queue = push(waiting_queue, *ready_queue); 			//Add the finished task to the waiting queue
+		//waiting_queue = push(waiting_queue, *ready_queue); 			//Add the finished task to the waiting queue
 		ready_queue = pop(ready_queue); 						//Pop the finished task from ready queue
 	}
 }
