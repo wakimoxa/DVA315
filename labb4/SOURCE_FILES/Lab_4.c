@@ -369,7 +369,7 @@ void OS_wakeup_n()
 //------------------Scheduler, returns the task to be executed ------------------
 task * scheduler_n()
 {
-	if (ready_queue != NULL || high_priority != NULL || medium_priority != NULL || low_priority != NULL)			//If the ready queue isn't empty, we have tasks ready to be returned from the scheduler
+	if (ready_queue != NULL)			//If the ready queue isn't empty, we have tasks ready to be returned from the scheduler
 	{
 		if (sched_type == sched_RR) 		//Here is the round robin (RR) scheduler, in the RR case, we just return the first element of the ready queue
 		{
@@ -383,57 +383,38 @@ task * scheduler_n()
 		if (sched_type == sched_MQ) 		//Here is where you implement your MQ scheduling algorithm,
 		{
 			task * current;
+
 			for(current = ready_queue; current != NULL; current = current->next){
 				if(current->quantum < 2){
 					high_priority = push(high_priority, *current);
 					
-					//printf("High\n");
+					printf("Inserting High\n");
 				}
-				else if(current->quantum > 1 && current->quantum < 3){
+				else if(current->quantum > 1 && current->quantum < 4){
 					medium_priority = push(medium_priority, *current);
-					//printf("Medium\n");
+
+					printf("Inserting Medium\n");
 				}
 				else{
 					low_priority = push(low_priority, *current);
 					
-					//printf("Low\n");
-				}
-				ready_queue = remove_node(ready_queue, current);
-			}
-			for(current = high_priority; current != NULL; current = current->next){
-				if(current->quantum < 1){
-					//high_priority = remove_node(high_priority, current);
-					printf("Done!\n");
-				}
-			}
-			for(current = medium_priority; current != NULL; current = current->next){
-				if(current->quantum < 2){
-					high_priority = push(high_priority, *current);
-					medium_priority = remove_node(medium_priority, current);
-					printf("Increase to High\n");
-				}
-			}
-			for(current = low_priority; current != NULL; current = current->next){
-				if(current->quantum < 4){
-					medium_priority = push(medium_priority, *current);
-					low_priority = remove_node(low_priority, current);
-					printf("Increase to Medium\n");
-
+					printf("Inserting Low\n");
 				}
 			}
 			if(high_priority != NULL){
+				ready_queue = high_priority;
 				printf("High\n");
-				return high_priority;
 			}
-			if(medium_priority != NULL){
+			else if(medium_priority != NULL){
+				ready_queue = medium_priority;
+				
 				printf("Medium\n");
-				return medium_priority;
 			}
-			if(low_priority != NULL){
+			else{
+				ready_queue = low_priority;
 				printf("Low\n");
-				return low_priority;
 			}
-			printf("No task!\n");
+			
 			return ready_queue;
 		}
 	}
