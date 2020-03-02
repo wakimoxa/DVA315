@@ -369,7 +369,7 @@ void OS_wakeup_n()
 //------------------Scheduler, returns the task to be executed ------------------
 task * scheduler_n()
 {
-	if (ready_queue != NULL)			//If the ready queue isn't empty, we have tasks ready to be returned from the scheduler
+	if (ready_queue != NULL || high_priority != NULL || medium_priority != NULL || low_priority != NULL)			//If the ready queue isn't empty, we have tasks ready to be returned from the scheduler
 	{
 		if (sched_type == sched_RR) 		//Here is the round robin (RR) scheduler, in the RR case, we just return the first element of the ready queue
 		{
@@ -382,37 +382,35 @@ task * scheduler_n()
 		}
 		if (sched_type == sched_MQ) 		//Here is where you implement your MQ scheduling algorithm,
 		{
-			task * current;
-
+			task * current = NULL;
 			for(current = ready_queue; current != NULL; current = current->next){
 				if(current->quantum < 2){
 					high_priority = push(high_priority, *current);
-					
-					printf("Inserting High\n");
+					//printf("Inserting High\n");
 				}
 				else if(current->quantum > 1 && current->quantum < 4){
 					medium_priority = push(medium_priority, *current);
-
-					printf("Inserting Medium\n");
+					//printf("Inserting Medium\n");
 				}
 				else{
 					low_priority = push(low_priority, *current);
-					
-					printf("Inserting Low\n");
+					//printf("Inserting Low\n");
 				}
 			}
 			if(high_priority != NULL){
 				ready_queue = high_priority;
-				printf("High\n");
+                high_priority = NULL;
+				//printf("High\n");
 			}
 			else if(medium_priority != NULL){
 				ready_queue = medium_priority;
-				
-				printf("Medium\n");
+                medium_priority = NULL;
+				//printf("Medium\n");
 			}
 			else{
 				ready_queue = low_priority;
-				printf("Low\n");
+                low_priority = NULL;
+				//printf("Low\n");
 			}
 			
 			return ready_queue;
@@ -429,7 +427,7 @@ task * scheduler_n()
 //------------------ Dispatcher executes the task ------------------
 void dispatch_n(task* exec)
 {
-	if (exec != exec_task) //If the pointer of the last executing task is not equal to the newly executing task a context switch has occurred
+	if (exec->ID != exec_task->ID) //If the pointer of the last executing task is not equal to the newly executing task a context switch has occurred
 	{
 		context_switches++; //Increase the context switches
 		exec_task = exec; //Change the pointer of the currently executing task
@@ -467,6 +465,7 @@ int main(int argc, char **argv)
 	readTaskset_n(fp); 			//Read taskset
 	task * task_to_be_run; 		//Return taskset from scheduler
 	idle_task = create(1337, 0, 0, 0, 0, 200000000, NULL);  //Create a dummy idle task
+    exec_task = idle_task;
 	while (1)
 	{
 		OS_wakeup_n();						//Wake up sleeping tasks
