@@ -179,7 +179,6 @@ int main()
                 counter++;
                 frames[j].time = counter;           // Update the time stamp for this frame
                 frames[j].timesAccessed++;
-                frames[j].timeUntilAccess--;
                 page_fault_flag = no_free_mem_flag = 1; // Indicate no page fault (no page fault and no free memory frame needed)
                 free = -1;                          // Indicate no free mem frame needed (reporting purposes)
                 break;
@@ -210,7 +209,7 @@ int main()
             frames[pos].page = refs[i];             // Update memory frame at position pos with referenced page
             frames[pos].time = counter;             // Update the time stamp for this frame
             frames[pos].inserted = counter;
-            frames[pos].timesAccessed++;
+            frames[pos].timesAccessed = 1;
         }
         printResultOfReference (no_of_frames, frames, page_fault_flag, no_free_mem_flag, pos, free, refs[i]); // Print result of referencing ref[i]
     }

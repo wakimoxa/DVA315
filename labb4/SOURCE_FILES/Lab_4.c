@@ -35,6 +35,7 @@ typedef struct taskprop{
     int ID;			//ID, to distinguish different tasks from eachother
     int quantum;		//How long the task has left to execute
     int queue_size;
+    int exec_counter;
     struct taskprop * next;
     struct taskprop * previous;
 } task;
@@ -74,7 +75,7 @@ void copy_task(task ** dest, task * src)		//Copies data of a task to another tas
 
 
 
-task* create(int ID, int deadline, int release_time, int period, int prio, int quantum, task* next)			//Creates a new task
+task* create(int ID, int deadline, int release_time, int period, int prio, int quantum, task* next, int exec_counter)			//Creates a new task
 {
     task* new_node = (task*)malloc(sizeof(task));
     if(new_node == NULL)
@@ -89,6 +90,7 @@ task* create(int ID, int deadline, int release_time, int period, int prio, int q
     new_node->priority = prio;
     new_node->quantum = quantum;
     new_node->next = next;
+    new_node->exec_counter = exec_counter;
     return new_node;
 }
 task * push(task * head, task data)			//Appends a task to a list
@@ -97,7 +99,7 @@ task * push(task * head, task data)			//Appends a task to a list
     task *cursor = head;
     if (cursor == NULL)
     {
-    	head =  create(data.ID, data.deadline, data.release_time, data.period, data.priority, data.quantum ,NULL);
+    	head =  create(data.ID, data.deadline, data.release_time, data.period, data.priority, data.quantum ,NULL, data.exec_counter);
     }
     else
     {
@@ -106,7 +108,7 @@ task * push(task * head, task data)			//Appends a task to a list
     		cursor = cursor->next;
     	}
     /* create a new node */
-    	task* new_node =  create(data.ID, data.deadline, data.release_time, data.period, data.priority, data.quantum ,NULL);
+    	task* new_node =  create(data.ID, data.deadline, data.release_time, data.period, data.priority, data.quantum ,NULL, data.exec_counter);
     	cursor->next = new_node;
     }
     return head;
@@ -384,17 +386,17 @@ task * scheduler_n()
 		{
 			task * current = NULL;
 			for(current = ready_queue; current != NULL; current = current->next){
-				if(current->quantum < 2){
+				if(current->exec_counter < 1){
 					high_priority = push(high_priority, *current);
-					//printf("Inserting High\n");
+					//printf("Inserting %d High\n", current->ID);
 				}
-				else if(current->quantum > 1 && current->quantum < 4){
+				else if(current->exec_counter >= 1 && current->exec_counter < 3){
 					medium_priority = push(medium_priority, *current);
-					//printf("Inserting Medium\n");
+					//printf("Inserting %d Medium\n", current->ID);
 				}
 				else{
 					low_priority = push(low_priority, *current);
-					//printf("Inserting Low\n");
+					//printf("Inserting %d Low\n", current->ID);
 				}
 			}
 			if(high_priority != NULL){
@@ -434,6 +436,7 @@ void dispatch_n(task* exec)
 	}
 
 	exec->quantum--; //Decrease the time quantum of a task, i.e. run the task
+    exec->exec_counter++;
 
 	if (exec->quantum > 0)
 	{
@@ -445,7 +448,7 @@ void dispatch_n(task* exec)
 		else
 		{
 			// Print task info
-			printf("Task %d is executing with %d quanta left - Total context switches: %d \n", exec->ID, exec->quantum, context_switches);
+			printf("Task %d is executing with %d quanta left - Total context switches: %d - Total execs %d \n", exec->ID, exec->quantum, context_switches, exec->exec_counter);
 		}
 
 		ready_queue = first_to_last(ready_queue); //Re-sort ready queue
@@ -464,7 +467,7 @@ int main(int argc, char **argv)
 	char * fp = "hej";			//File path to taskset
 	readTaskset_n(fp); 			//Read taskset
 	task * task_to_be_run; 		//Return taskset from scheduler
-	idle_task = create(1337, 0, 0, 0, 0, 200000000, NULL);  //Create a dummy idle task
+	idle_task = create(1337, 0, 0, 0, 0, 200000000, NULL, 0);  //Create a dummy idle task
     exec_task = idle_task;
 	while (1)
 	{
