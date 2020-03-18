@@ -70,6 +70,7 @@ void copy_task(task ** dest, task * src)		//Copies data of a task to another tas
 	temp->period = src->period;
 	temp->priority = src->priority;
 	temp->quantum = src->quantum;
+    temp->exec_counter = src->exec_counter;
 	*dest = temp;
 }
 
@@ -218,6 +219,7 @@ task * first_to_last (task * head)
 	return new_front;
 
 }
+
 //---my sorting functions-----
 // Returns the last node of the list 
 task *getTail(task *cur) 
@@ -225,7 +227,19 @@ task *getTail(task *cur)
     while (cur != NULL && cur->next != NULL) 
         cur = cur->next; 
     return cur; 
-} 
+}
+
+int q_sort_compare_quanta(task * a, task * b){
+    if(a->quantum < b->quantum)
+        return 1;
+    return 0;
+}
+
+int q_sort_compare_exec(task * a, task * b){
+    if(a->exec_counter >= b->exec_counter)
+        return 1;
+    return 0;
+}
 
 // Partitions the list taking the last element as the pivot 
 task *partition(task *head, task *end, 
@@ -237,8 +251,15 @@ task *partition(task *head, task *end,
     // During partition, both the head and end of the list might change 
     // which is updated in the newHead and newEnd variables 
     while (cur != pivot) 
-    { 
-        if (cur->quantum < pivot->quantum) 
+    {
+        int compare;
+        if(sched_type = sched_MQ)
+            compare = q_sort_compare_exec(cur, pivot);
+        else
+            compare = q_sort_compare_quanta(cur, pivot);
+
+        
+        if (compare) 
         { 
             // First node that has a value less than the pivot - becomes 
             // the new head 
@@ -384,7 +405,7 @@ task * scheduler_n()
 		}
 		if (sched_type == sched_MQ) 		//Here is where you implement your MQ scheduling algorithm,
 		{
-			task * current = NULL;
+            task * current = NULL;
 			for(current = ready_queue; current != NULL; current = current->next){
 				if(current->exec_counter < 1){
 					high_priority = push(high_priority, *current);
@@ -450,8 +471,8 @@ void dispatch_n(task* exec)
 			// Print task info
 			printf("Task %d is executing with %d quanta left - Total context switches: %d - Total execs %d \n", exec->ID, exec->quantum, context_switches, exec->exec_counter);
 		}
-
-		ready_queue = first_to_last(ready_queue); //Re-sort ready queue
+        if(sched_type != sched_MQ)
+		    ready_queue = first_to_last(ready_queue); //Re-sort ready queue
 	}
 	else
 	{
